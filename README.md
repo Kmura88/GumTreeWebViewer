@@ -3,6 +3,8 @@
 Javaソースコードの変更差分（ASTベースの差分）をWebブラウザ上で視覚的に確認するためのツール．
 バックエンドで **GumTree** および **LGMatcher** アルゴリズムを実行し，その結果（Delete, Insert, Move, Update）をモダンなUIでハイライト表示する．
 
+[内部の処理](https://github.com/Kmura88/LGMatcherJsonExporter)
+
 ##  起動画面
 
 <img width="1316" height="741" alt="起動画面" src="https://github.com/user-attachments/assets/f686e1a3-ed00-435c-b6b8-adc20ccea3b1" />
@@ -61,3 +63,4 @@ python app.py
 GumTreeの解析仕様上，入力するコードは完全なクラス構造である必要がある．
 
 メソッドの断片のみでは正しく解析されない．
+
