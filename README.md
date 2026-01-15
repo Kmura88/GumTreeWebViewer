@@ -5,6 +5,8 @@ Javaソースコードの変更差分（ASTベースの差分）をWebブラウ�
 
 ##  起動画面
 
+<img width="1316" height="741" alt="起動画面" src="https://github.com/user-attachments/assets/f686e1a3-ed00-435c-b6b8-adc20ccea3b1" />
+
 
 ## 動作環境
 
@@ -57,4 +59,5 @@ python app.py
 ## ⚠️ 入力コードに関する注意
 
 GumTreeの解析仕様上，入力するコードは完全なクラス構造である必要がある．
+
 メソッドの断片のみでは正しく解析されない．
