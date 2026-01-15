@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LGMatcher Visualizer</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            /* Color Palette */
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            
+            /* Diff Colors (Softer, Modern) */
+            --diff-add-bg: #d1fae5;
+            --diff-add-border: #10b981;
+            
+            --diff-del-bg: #fee2e2;
+            --diff-del-border: #ef4444;
+            
+            --diff-mv-bg: #e0e7ff;
+            --diff-mv-border: #6366f1;
+            
+            --diff-upd-bg: #fef3c7;
+            --diff-upd-border: #f59e0b;
+            
+            --highlight-gold: #fde047;
+            --highlight-focus: #eab308;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            padding-bottom: 40px;
+        }
+
+        /* Card Styles */
+        .modern-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .card-header-custom {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-custom {
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .radio-tile-group {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .radio-tile-group input {
+            display: none;
+        }
+        
+        .radio-tile-label {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .radio-tile-group input:checked + .radio-tile-label {
+            background-color: var(--text-primary);
+            color: white;
+            border-color: var(--text-primary);
+        }
+
+        /* Input Area with Animation */
+        #inputContainer {
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out;
+            max-height: 1200px; /* initial open state estimation */
+            opacity: 1;
+            padding: 0 24px 24px 24px;
+        }
+        
+        #inputContainer.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-bottom: 0;
+        }
+
+        textarea.editor-input {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            background-color: #f9fafb;
+            resize: vertical;
+            min-height: 150px;
+        }
+        
+        textarea.editor-input:focus {
+            background-color: #fff;
+            border-color: var(--diff-mv-border);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Alert Box */
+        .alert-custom {
+            font-size: 0.85rem;
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            color: #1e40af;
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Code Display Area */
+        .pane-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-window {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: 75vh;
+            overflow: auto;
+            position: relative;
+        }
+
+        .code-content {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; /* 10pt approx */
+            line-height: 1.6;
+            padding: 20px;
+            white-space: pre-wrap;
+            color: #374151;
+        }
+
+        /* Scrollbar Styling */
+        .code-window::-webkit-scrollbar { width: 8px; height: 8px; }
+        .code-window::-webkit-scrollbar-track { background: transparent; }
+        .code-window::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 4px; }
+        .code-window::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+
+        /* Token Styles */
+        .token {
+            border-radius: 3px;
+            padding: 0 1px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .del { background-color: var(--diff-del-bg); border-bottom: 2px solid var(--diff-del-border); color: #7f1d1d; text-decoration: line-through; text-decoration-color: rgba(127, 29, 29, 0.4); }
+        .add { background-color: var(--diff-add-bg); border-bottom: 2px solid var(--diff-add-border); color: #064e3b; }
+        .mv  { background-color: var(--diff-mv-bg); border-bottom: 2px solid var(--diff-mv-border); color: #312e81; }
+        .upd { background-color: var(--diff-upd-bg); border-bottom: 2px solid var(--diff-upd-border); color: #78350f; font-weight: 600;}
+
+        /* Hover & Selected States */
+        .token:hover { filter: brightness(0.95); }
+
+        .selected {
+            background-color: var(--highlight-gold) !important;
+            box-shadow: 0 0 0 2px var(--highlight-focus), 0 4px 12px rgba(234, 179, 8, 0.3);
+            z-index: 10;
+            color: black !important;
+            text-decoration: none !important;
+            border-radius: 4px;
+            transform: scale(1.02);
+        }
+
+        /* Status Badge */
+        #status-indicator {
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-ready { background: #e5e7eb; color: #374151; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-success { background: #dcfce7; color: #166534; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4 pt-4">
+    
+    <div class="modern-card">
+        <div class="card-header-custom">
+            <div class="app-title">
+                <i class="bi bi-code-square text-primary"></i> LGMatcher Visualizer
+            </div>
+            
+            <div class="control-group">
+                <div class="radio-tile-group">
+                    <div>
+                        <input type="radio" name="matcherOption" id="optLGM" value="-LGM" checked>
+                        <label class="radio-tile-label" for="optLGM">
+                            <i class="bi bi-lightning-charge-fill"></i> LGMatcher
+                        </label>
+                    </div>
+                    <div>
+                        <input type="radio" name="matcherOption" id="optM" value="-M">
+                        <label class="radio-tile-label" for="optM">
+                            <i class="bi bi-box"></i> Default
+                        </label>
+                    </div>
+                </div>
+
+                <div class="vr mx-2"></div>
+
+                <button class="btn btn-outline-secondary btn-custom btn-sm" onclick="toggleInputs()">
+                    <i class="bi bi-layout-split"></i> Edit Code
+                </button>
+                <button class="btn btn-primary btn-custom btn-sm" onclick="runCompare()">
+                    <i class="bi bi-play-fill"></i> Run Compare
+                </button>
+            </div>
+            
+            <div id="statusWrapper">
+                <span id="status-indicator" class="status-ready">
+                    <span class="status-dot">●</span> Ready
+                </span>
+            </div>
+        </div>
+
+        <div id="inputContainer">
+            <div class="alert-custom mt-3 mb-1">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>
+                    <strong>Requirement:</strong> Input must be a valid Java class structure (e.g., <code>class Main { ... }</code>). Method fragments alone may not work correctly.
+                </span>
+            </div>
+
+            <div class="row g-3 pt-2">
+                <div class="col-md-6">
+                    <label class="pane-title"><i class="bi bi-file-earmark-code"></i> Source (Before)</label>
+                    <textarea id="srcInput" class="form-control editor-input" placeholder="Paste full Java class here...">
+class Test {
+    public void hello() {
+        System.out.println("Hello");
+    }
+}</textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="pane-title"><i class="bi bi-file-earmark-plus"></i> Destination (After)</label>
+                    <textarea id="dstInput" class="form-control editor-input" placeholder="Paste full Java class here...">
+class Test {
+    public void hello() {
+        System.out.println("World");
+    }
+}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="pane-title mb-0">Original Version</div>
+                <span class="badge bg-light text-secondary border">read-only</span>
+            </div>
+            <div class="code-window">
+                <div id="srcDisplay" class="code-content"></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="pane-title mb-0">Modified Version</div>
+                <span class="badge bg-light text-secondary border">read-only</span>
+            </div>
+            <div class="code-window">
+                <div id="dstDisplay" class="code-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function toggleInputs() {
+        const el = document.getElementById('inputContainer');
+        el.classList.toggle('collapsed');
+    }
+
+    function setStatus(state, msg) {
+        const el = document.getElementById('status-indicator');
+        el.className = ''; // reset
+        el.textContent = msg;
+        
+        if(state === 'processing') {
+            el.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Processing...';
+            el.classList.add('status-processing');
+        } else if (state === 'success') {
+            el.innerHTML = '<i class="bi bi-check-circle-fill"></i> Done';
+            el.classList.add('status-success');
+        } else if (state === 'error') {
+            el.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Error';
+            el.classList.add('status-error');
+        } else {
+            el.innerHTML = '● Ready';
+            el.classList.add('status-ready');
+        }
+    }
+
+    async function runCompare() {
+        const srcCode = document.getElementById('srcInput').value;
+        const dstCode = document.getElementById('dstInput').value;
+        
+        let option = '-LGM';
+        const radio = document.querySelector('input[name="matcherOption"]:checked');
+        if (radio) option = radio.value;
+        
+        setStatus('processing');
+
+        try {
+            const response = await fetch('/compare', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    src_code: srcCode, 
+                    dst_code: dstCode,
+                    option: option 
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.error) {
+                setStatus('error');
+                alert(result.error);
+                return;
+            }
+
+            setStatus('success');
+            
+            // 入力欄を閉じる（アニメーション付き）
+            document.getElementById('inputContainer').classList.add('collapsed');
+            
+            renderDiff(srcCode, dstCode, result.data);
+
+        } catch (e) {
+            setStatus('error');
+            console.error(e);
+        }
+    }
+
+    function renderDiff(srcText, dstText, json) {
+        let srcRanges = [];
+        let dstRanges = [];
+
+        // Mapping Data
+        if(json.DELETE) json.DELETE.forEach((a, i) => srcRanges.push({s: a.src_pos, e: a.src_end, type: 'del token', id: `del-${i}`}));
+        if(json.INSERT) json.INSERT.forEach((a, i) => dstRanges.push({s: a.dst_pos, e: a.dst_end, type: 'add token', id: `ins-${i}`}));
+
+        if(json.MOVE) json.MOVE.forEach((a, i) => {
+            const linkId = `mv-${i}`;
+            srcRanges.push({s: a.src_pos, e: a.src_end, type: 'mv token', id: linkId});
+            dstRanges.push({s: a.dst_pos, e: a.dst_end, type: 'mv token', id: linkId});
+        });
+
+        if(json.UPDATE) json.UPDATE.forEach((a, i) => {
+            const linkId = `upd-${i}`;
+            srcRanges.push({s: a.src_pos, e: a.src_end, type: 'upd token', id: linkId});
+            dstRanges.push({s: a.dst_pos, e: a.dst_end, type: 'upd token', id: linkId});
+        });
+
+        document.getElementById('srcDisplay').innerHTML = buildHighlightedHtml(srcText, srcRanges);
+        document.getElementById('dstDisplay').innerHTML = buildHighlightedHtml(dstText, dstRanges);
+
+        setupInteractions();
+    }
+
+    function buildHighlightedHtml(text, ranges) {
+        if (!text) return "";
+        let points = new Set([0, text.length]);
+        ranges.forEach(r => {
+            if(r.s >= 0 && r.s <= text.length) points.add(r.s);
+            if(r.e >= 0 && r.e <= text.length) points.add(r.e);
+        });
+        
+        let sortedPoints = Array.from(points).sort((a, b) => a - b);
+        let html = "";
+        
+        for (let i = 0; i < sortedPoints.length - 1; i++) {
+            let start = sortedPoints[i];
+            let end = sortedPoints[i+1];
+            let segmentText = text.substring(start, end);
+            let escapedText = escapeHtml(segmentText);
+            
+            let activeRanges = ranges.filter(r => r.s <= start && r.e >= end);
+            activeRanges.sort((a, b) => (a.e - a.s) - (b.e - b.s));
+            
+            let wrappedSegment = escapedText;
+            activeRanges.forEach(r => {
+                wrappedSegment = `<span class="${r.type}" data-link-id="${r.id}">${wrappedSegment}</span>`;
+            });
+            html += wrappedSegment;
+        }
+        return html;
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function setupInteractions() {
+        const tokens = document.querySelectorAll('.token');
+        tokens.forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                const isSelected = el.classList.contains('selected');
+                document.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
+                
+                if (!isSelected) {
+                    const linkId = el.getAttribute('data-link-id');
+                    if (linkId) {
+                        const linkedElements = document.querySelectorAll(`[data-link-id="${linkId}"]`);
+                        linkedElements.forEach(target => {
+                            target.classList.add('selected');
+                            if (target !== el) {
+                                target.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
+        });
+    }
+</script>
+</body>
+</html>
