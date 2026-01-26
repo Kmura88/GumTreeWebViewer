@@ -22,17 +22,17 @@
             --text-secondary: #6b7280;
             
             /* Diff Colors (Softer, Modern) */
-            --diff-add-bg: #d1fae5;
-            --diff-add-border: #10b981;
+            --diff-add-bg: #f0fdec;
+            --diff-add-border: #37b73a;
             
-            --diff-del-bg: #fee2e2;
-            --diff-del-border: #ef4444;
+            --diff-del-bg: #fff4f2;
+            --diff-del-border: #cd5c5c;
             
-            --diff-mv-bg: #e0e7ff;
-            --diff-mv-border: #6366f1;
+            --diff-mv-bg: #fff4ff;
+            --diff-mv-border: #dda0dd;
             
-            --diff-upd-bg: #fef3c7;
-            --diff-upd-border: #f59e0b;
+            --diff-upd-bg: #fff8f0;
+            --diff-upd-border: #daa520;
             
             --highlight-gold: #fde047;
             --highlight-focus: #eab308;
@@ -62,6 +62,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap; /* レスポンシブ対応 */
+            gap: 15px;
         }
 
         .app-title {
@@ -137,6 +139,7 @@
             background-color: #f9fafb;
             resize: vertical;
             min-height: 150px;
+            width: 100%; /* 横幅修正 */
         }
         
         textarea.editor-input:focus {
@@ -157,6 +160,29 @@
             align-items: center;
             gap: 8px;
         }
+
+        /* Legend Styles */
+        .legend-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+
+        .l-add { background-color: var(--diff-add-bg); border-color: var(--diff-add-border); color: #37b73a; }
+        .l-del { background-color: var(--diff-del-bg); border-color: var(--diff-del-border); color: #cd5c5c; text-decoration: line-through; }
+        .l-mv  { background-color: var(--diff-mv-bg);  border-color: var(--diff-mv-border);  color: #dda0dd; }
+        .l-upd { background-color: var(--diff-upd-bg); border-color: var(--diff-upd-border); color: #daa520; }
 
         /* Code Display Area */
         .pane-title {
@@ -204,10 +230,10 @@
             position: relative;
         }
 
-        .del { background-color: var(--diff-del-bg); border-bottom: 2px solid var(--diff-del-border); color: #7f1d1d; text-decoration: line-through; text-decoration-color: rgba(127, 29, 29, 0.4); }
-        .add { background-color: var(--diff-add-bg); border-bottom: 2px solid var(--diff-add-border); color: #064e3b; }
-        .mv  { background-color: var(--diff-mv-bg); border-bottom: 2px solid var(--diff-mv-border); color: #312e81; }
-        .upd { background-color: var(--diff-upd-bg); border-bottom: 2px solid var(--diff-upd-border); color: #78350f; font-weight: 600;}
+        .del { background-color: var(--diff-del-bg); border-bottom: 2px solid var(--diff-del-border); color: #cd5c5c; font-weight: 200;}
+        .add { background-color: var(--diff-add-bg); border-bottom: 2px solid var(--diff-add-border); color: #37b73a; font-weight: 200;}
+        .mv  { background-color: var(--diff-mv-bg); border-bottom: 2px solid var(--diff-mv-border); color: #dda0dd; font-weight: 200;}
+        .upd { background-color: var(--diff-upd-bg); border-bottom: 2px solid var(--diff-upd-border); color: #DAA520; font-weight: 200;}
 
         /* Hover & Selected States */
         .token:hover { filter: brightness(0.95); }
@@ -245,37 +271,46 @@
     
     <div class="modern-card">
         <div class="card-header-custom">
-            <div class="app-title">
-                <i class="bi bi-code-square text-primary"></i> LGMatcher Visualizer
+            <div class="d-flex align-items-center gap-4">
+                <div class="app-title">
+                    <i class="bi bi-code-square text-primary"></i> LGMatcher
+                </div>
+                
+                <div class="control-group">
+                    <div class="radio-tile-group">
+                        <div>
+                            <input type="radio" name="matcherOption" id="optLGM" value="-LGM" checked>
+                            <label class="radio-tile-label" for="optLGM">
+                                <i class="bi bi-lightning-charge-fill"></i> LGMatcher
+                            </label>
+                        </div>
+                        <div>
+                            <input type="radio" name="matcherOption" id="optM" value="-M">
+                            <label class="radio-tile-label" for="optM">
+                                <i class="bi bi-box"></i> Default
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-outline-secondary btn-custom btn-sm" onclick="toggleInputs()">
+                        <i class="bi bi-layout-split"></i> Edit
+                    </button>
+                    <button class="btn btn-primary btn-custom btn-sm" onclick="runCompare()">
+                        <i class="bi bi-play-fill"></i> Compare
+                    </button>
+                </div>
             </div>
             
-            <div class="control-group">
-                <div class="radio-tile-group">
-                    <div>
-                        <input type="radio" name="matcherOption" id="optLGM" value="-LGM" checked>
-                        <label class="radio-tile-label" for="optLGM">
-                            <i class="bi bi-lightning-charge-fill"></i> LGMatcher
-                        </label>
-                    </div>
-                    <div>
-                        <input type="radio" name="matcherOption" id="optM" value="-M">
-                        <label class="radio-tile-label" for="optM">
-                            <i class="bi bi-box"></i> Default
-                        </label>
-                    </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="legend-container">
+                    <span class="legend-item l-del">Deleted</span>
+                    <span class="legend-item l-add">Added</span>
+                    <span class="legend-item l-mv">Moved</span>
+                    <span class="legend-item l-upd">Updated</span>
                 </div>
 
-                <div class="vr mx-2"></div>
+                <div class="vr mx-2" style="height: 20px; opacity: 0.2;"></div>
 
-                <button class="btn btn-outline-secondary btn-custom btn-sm" onclick="toggleInputs()">
-                    <i class="bi bi-layout-split"></i> Edit Code
-                </button>
-                <button class="btn btn-primary btn-custom btn-sm" onclick="runCompare()">
-                    <i class="bi bi-play-fill"></i> Run Compare
-                </button>
-            </div>
-            
-            <div id="statusWrapper">
                 <span id="status-indicator" class="status-ready">
                     <span class="status-dot">●</span> Ready
                 </span>
