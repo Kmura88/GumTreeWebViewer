@@ -4,331 +4,444 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LGMatcher Visualizer</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
     <style>
         :root {
-            /* Color Palette */
-            --bg-body: #f3f4f6;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            
-            /* Diff Colors (Softer, Modern) */
-            --diff-add-bg: #f0fdec;
-            --diff-add-border: #37b73a;
-            
-            --diff-del-bg: #fff4f2;
-            --diff-del-border: #cd5c5c;
-            
-            --diff-mv-bg: #fff4ff;
-            --diff-mv-border: #dda0dd;
-            
-            --diff-upd-bg: #fff8f0;
-            --diff-upd-border: #daa520;
-            
-            --highlight-gold: #fde047;
-            --highlight-focus: #eab308;
+            --bg-body: #f6f6f4;
+            --bg-pane: #ffffff;
+            --border-color: #dedfdb;
+            --border-strong: #c6c8c2;
+            --text-primary: #20242b;
+            --text-secondary: #6b7076;
+            --accent: #20242b;
+
+            /* Diff colors: text is dark enough to read, bg stays light */
+            --del-fg: #b42318; --del-bg: #fef1f0; --del-bd: #e8837a;
+            --add-fg: #1a7f37; --add-bg: #eefbf1; --add-bd: #67c587;
+            --mv-fg:  #6741d9; --mv-bg:  #f4f1fd; --mv-bd:  #ab93ec;
+            --upd-fg: #b45309; --upd-bg: #fdf6e9; --upd-bd: #e2ad62;
+
+            --pin-bg: #ffe9a8;
+            --pin-ring: #d9a514;
         }
+
+        * { box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background-color: var(--bg-body);
             color: var(--text-primary);
-            padding-bottom: 40px;
+            padding-bottom: 32px;
         }
 
-        /* Card Styles */
-        .modern-card {
-            background: var(--bg-card);
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* ===== Toolbar ===== */
+        .toolbar {
+            background: var(--bg-pane);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .card-header-custom {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 6px;
+            padding: 10px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap; /* レスポンシブ対応 */
-            gap: 15px;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            margin-bottom: 12px;
+        }
+
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .app-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #111827;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
             display: flex;
             align-items: center;
             gap: 8px;
+            padding-right: 14px;
+            border-right: 1px solid var(--border-color);
+        }
+        .app-title .ver {
+            font-weight: 400;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
         }
 
-        /* Controls */
-        .control-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
+        /* Segmented control for matcher option */
+        .seg-group {
+            display: inline-flex;
+            border: 1px solid var(--border-strong);
+            border-radius: 5px;
+            overflow: hidden;
         }
-
-        .btn-custom {
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .radio-tile-group {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .radio-tile-group input {
-            display: none;
-        }
-        
-        .radio-tile-label {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
+        .seg-group input { display: none; }
+        .seg-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            padding: 5px 12px;
             cursor: pointer;
             color: var(--text-secondary);
-            transition: all 0.2s;
-            background: #fff;
+            background: var(--bg-pane);
+            margin: 0;
+            user-select: none;
+            transition: background 0.12s, color 0.12s;
+        }
+        .seg-label + div .seg-label, .seg-group > div + div .seg-label {
+            border-left: 1px solid var(--border-strong);
+        }
+        .seg-group input:checked + .seg-label {
+            background: var(--accent);
+            color: #fff;
+        }
+        .seg-group input:focus-visible + .seg-label {
+            outline: 2px solid var(--pin-ring);
+            outline-offset: -2px;
         }
 
-        .radio-tile-group input:checked + .radio-tile-label {
-            background-color: var(--text-primary);
-            color: white;
-            border-color: var(--text-primary);
+        .btn-tool {
+            font-size: 0.82rem;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 5px;
+            border: 1px solid var(--border-strong);
+            background: var(--bg-pane);
+            color: var(--text-primary);
+            transition: background 0.12s;
+        }
+        .btn-tool:hover { background: #efefec; }
+        .btn-run {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .btn-run:hover { background: #3a3f48; color: #fff; }
+        .btn-tool.active { background: #e8e8e4; }
+
+        kbd.hint {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 3px;
+            padding: 1px 4px;
+            margin-left: 6px;
+            color: inherit;
         }
 
-        /* Input Area with Animation */
-        #inputContainer {
+        /* Legend doubles as edit counters */
+        .legend-container {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid;
+        }
+        .legend-item .cnt {
+            font-weight: 700;
+            min-width: 1ch;
+            text-align: right;
+        }
+        .l-del { background: var(--del-bg); border-color: var(--del-bd); color: var(--del-fg); }
+        .l-add { background: var(--add-bg); border-color: var(--add-bd); color: var(--add-fg); }
+        .l-mv  { background: var(--mv-bg);  border-color: var(--mv-bd);  color: var(--mv-fg); }
+        .l-upd { background: var(--upd-bg); border-color: var(--upd-bd); color: var(--upd-fg); }
+
+        /* Status */
+        #status-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid transparent;
+        }
+        .status-ready      { background: #eceeea; color: #4b5158; }
+        .status-processing { background: #e8f0fe; color: #1b4ed8; }
+        .status-success    { background: var(--add-bg); color: var(--add-fg); border-color: var(--add-bd); }
+        .status-error      { background: var(--del-bg); color: var(--del-fg); border-color: var(--del-bd); }
+
+        /* ===== Error banner (replaces alert) ===== */
+        #error-banner {
+            display: none;
+            background: var(--del-bg);
+            border: 1px solid var(--del-bd);
+            color: var(--del-fg);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        #error-banner.show { display: flex; }
+        #error-banner pre {
+            margin: 0;
+            font-size: 0.78rem;
+            white-space: pre-wrap;
+            color: inherit;
+        }
+        #error-banner .btn-close { font-size: 0.7rem; margin-left: auto; }
+
+        /* ===== Input drawer ===== */
+        .input-card {
+            background: var(--bg-pane);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 12px;
             overflow: hidden;
-            transition: max-height 0.4s ease-out, opacity 0.4s ease-out;
-            max-height: 1200px; /* initial open state estimation */
+            transition: max-height 0.35s ease, opacity 0.35s ease, margin-bottom 0.35s ease, border-width 0.35s;
+            max-height: 1400px;
             opacity: 1;
-            padding: 0 24px 24px 24px;
         }
-        
-        #inputContainer.collapsed {
+        .input-card.collapsed {
             max-height: 0;
             opacity: 0;
-            padding-bottom: 0;
+            margin-bottom: 0;
+            border-width: 0;
+        }
+        .input-card-body { padding: 14px 16px 16px; }
+
+        .alert-note {
+            font-size: 0.8rem;
+            background: #f1f4f8;
+            border: 1px solid #dbe3ec;
+            color: #3b4d63;
+            border-radius: 5px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .alert-note code { color: inherit; background: rgba(255,255,255,0.7); padding: 0 4px; border-radius: 3px; }
+
+        .pane-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         textarea.editor-input {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.55;
+            border-radius: 5px;
             border: 1px solid var(--border-color);
-            padding: 12px;
-            background-color: #f9fafb;
+            padding: 10px 12px;
+            background-color: #fbfbfa;
             resize: vertical;
-            min-height: 150px;
-            width: 100%; /* 横幅修正 */
+            min-height: 180px;
+            width: 100%;
+            tab-size: 4;
         }
-        
         textarea.editor-input:focus {
             background-color: #fff;
-            border-color: var(--diff-mv-border);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: var(--border-strong);
+            box-shadow: 0 0 0 3px rgba(32, 36, 43, 0.08);
+            outline: none;
         }
 
-        /* Alert Box */
-        .alert-custom {
-            font-size: 0.85rem;
-            background-color: #eff6ff;
-            border: 1px solid #dbeafe;
-            color: #1e40af;
-            border-radius: 8px;
-            padding: 10px 16px;
+        /* ===== Result panes ===== */
+        .pane-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            margin-bottom: 6px;
         }
-
-        /* Legend Styles */
-        .legend-container {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid transparent;
-        }
-
-        .l-add { background-color: var(--diff-add-bg); border-color: var(--diff-add-border); color: #37b73a; }
-        .l-del { background-color: var(--diff-del-bg); border-color: var(--diff-del-border); color: #cd5c5c; text-decoration: line-through; }
-        .l-mv  { background-color: var(--diff-mv-bg);  border-color: var(--diff-mv-border);  color: #dda0dd; }
-        .l-upd { background-color: var(--diff-upd-bg); border-color: var(--diff-upd-border); color: #daa520; }
-
-        /* Code Display Area */
-        .pane-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        .pane-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
             color: var(--text-secondary);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
 
         .code-window {
-            background-color: #ffffff;
+            background-color: var(--bg-pane);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            height: 75vh;
+            border-radius: 6px;
+            height: 72vh;
             overflow: auto;
             position: relative;
         }
-
+        .code-inner {
+            display: flex;
+            min-width: max-content;
+            min-height: 100%;
+        }
+        .gutter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px 10px 16px 14px;
+            text-align: right;
+            color: #b3b6ae;
+            background: #fafaf8;
+            border-right: 1px solid var(--border-color);
+            user-select: none;
+            position: sticky;
+            left: 0;
+            white-space: pre;
+            z-index: 5;
+        }
         .code-content {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 13px; /* 10pt approx */
+            font-size: 13px;
             line-height: 1.6;
-            padding: 20px;
-            white-space: pre-wrap;
-            color: #374151;
+            padding: 16px 24px 16px 16px;
+            white-space: pre;
+            color: #2b2f36;
+        }
+        .code-empty {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: #b3b6ae;
+            padding: 24px;
+            white-space: normal;
         }
 
-        /* Scrollbar Styling */
-        .code-window::-webkit-scrollbar { width: 8px; height: 8px; }
+        .code-window::-webkit-scrollbar { width: 9px; height: 9px; }
         .code-window::-webkit-scrollbar-track { background: transparent; }
-        .code-window::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 4px; }
-        .code-window::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+        .code-window::-webkit-scrollbar-thumb { background-color: #d4d5d0; border-radius: 5px; border: 2px solid var(--bg-pane); }
+        .code-window::-webkit-scrollbar-thumb:hover { background-color: #aaaca5; }
 
-        /* Token Styles */
+        /* ===== Tokens ===== */
         .token {
-            border-radius: 3px;
-            padding: 0 1px;
+            border-radius: 2px;
             cursor: pointer;
-            transition: all 0.15s ease;
-            position: relative;
+            transition: background-color 0.1s, box-shadow 0.1s;
         }
+        .del { background-color: var(--del-bg); border-bottom: 2px solid var(--del-bd); color: var(--del-fg); }
+        .add { background-color: var(--add-bg); border-bottom: 2px solid var(--add-bd); color: var(--add-fg); }
+        .mv  { background-color: var(--mv-bg);  border-bottom: 2px solid var(--mv-bd);  color: var(--mv-fg); }
+        .upd { background-color: var(--upd-bg); border-bottom: 2px solid var(--upd-bd); color: var(--upd-fg); }
 
-        .del { background-color: var(--diff-del-bg); border-bottom: 2px solid var(--diff-del-border); color: #cd5c5c; font-weight: 200;}
-        .add { background-color: var(--diff-add-bg); border-bottom: 2px solid var(--diff-add-border); color: #37b73a; font-weight: 200;}
-        .mv  { background-color: var(--diff-mv-bg); border-bottom: 2px solid var(--diff-mv-border); color: #dda0dd; font-weight: 200;}
-        .upd { background-color: var(--diff-upd-bg); border-bottom: 2px solid var(--diff-upd-border); color: #DAA520; font-weight: 200;}
+        /* Hover: preview the linked counterpart in the other pane */
+        .token.hover-link {
+            box-shadow: 0 0 0 1.5px var(--border-strong);
+        }
+        .token:hover { filter: brightness(0.96); }
 
-        /* Hover & Selected States */
-        .token:hover { filter: brightness(0.95); }
-
+        /* Click: pin the pair */
         .selected {
-            background-color: var(--highlight-gold) !important;
-            box-shadow: 0 0 0 2px var(--highlight-focus), 0 4px 12px rgba(234, 179, 8, 0.3);
-            z-index: 10;
-            color: black !important;
+            background-color: var(--pin-bg) !important;
+            box-shadow: 0 0 0 2px var(--pin-ring);
+            color: #20242b !important;
             text-decoration: none !important;
-            border-radius: 4px;
-            transform: scale(1.02);
         }
 
-        /* Status Badge */
-        #status-indicator {
-            font-size: 0.8rem;
-            font-weight: 500;
-            padding: 4px 10px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        /* keyboard focus */
+        .btn-tool:focus-visible {
+            outline: 2px solid var(--pin-ring);
+            outline-offset: 1px;
         }
-        .status-ready { background: #e5e7eb; color: #374151; }
-        .status-processing { background: #dbeafe; color: #1e40af; }
-        .status-success { background: #dcfce7; color: #166534; }
-        .status-error { background: #fee2e2; color: #991b1b; }
 
+        @media (prefers-reduced-motion: reduce) {
+            .input-card, .seg-label, .btn-tool, .token { transition: none; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container-fluid px-4 pt-4">
-    
-    <div class="modern-card">
-        <div class="card-header-custom">
-            <div class="d-flex align-items-center gap-4">
-                <div class="app-title">
-                    <i class="bi bi-code-square text-primary"></i> LGMatcher
-                </div>
-                
-                <div class="control-group">
-                    <div class="radio-tile-group">
-                        <div>
-                            <input type="radio" name="matcherOption" id="optLGM" value="-LGM" checked>
-                            <label class="radio-tile-label" for="optLGM">
-                                <i class="bi bi-lightning-charge-fill"></i> LGMatcher
-                            </label>
-                        </div>
-                        <div>
-                            <input type="radio" name="matcherOption" id="optM" value="-M">
-                            <label class="radio-tile-label" for="optM">
-                                <i class="bi bi-box"></i> Default
-                            </label>
-                        </div>
-                    </div>
+<div class="container-fluid px-4 pt-3">
 
-                    <button class="btn btn-outline-secondary btn-custom btn-sm" onclick="toggleInputs()">
-                        <i class="bi bi-layout-split"></i> Edit
-                    </button>
-                    <button class="btn btn-primary btn-custom btn-sm" onclick="runCompare()">
-                        <i class="bi bi-play-fill"></i> Compare
-                    </button>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <div class="app-title">
+                <i class="bi bi-braces"></i> LGMatcher <span class="ver">visualizer</span>
+            </div>
+
+            <div class="seg-group" role="radiogroup" aria-label="Matcher">
+                <div>
+                    <input type="radio" name="matcherOption" id="optLGM" value="-LGM" checked>
+                    <label class="seg-label" for="optLGM">LGMatcher</label>
+                </div>
+                <div>
+                    <input type="radio" name="matcherOption" id="optM" value="-M">
+                    <label class="seg-label" for="optM">Default</label>
                 </div>
             </div>
-            
-            <div class="d-flex align-items-center gap-3">
-                <div class="legend-container">
-                    <span class="legend-item l-del">Deleted</span>
-                    <span class="legend-item l-add">Added</span>
-                    <span class="legend-item l-mv">Moved</span>
-                    <span class="legend-item l-upd">Updated</span>
-                </div>
 
-                <div class="vr mx-2" style="height: 20px; opacity: 0.2;"></div>
-
-                <span id="status-indicator" class="status-ready">
-                    <span class="status-dot">●</span> Ready
-                </span>
-            </div>
+            <button class="btn btn-tool" id="editToggleBtn" onclick="toggleInputs()" title="Show or hide the input editors">
+                <i class="bi bi-pencil-square"></i> <span id="editToggleLabel">Hide input</span>
+            </button>
+            <button class="btn btn-tool" onclick="swapInputs()" title="Swap Before and After">
+                <i class="bi bi-arrow-left-right"></i> Swap
+            </button>
+            <button class="btn btn-tool btn-run" onclick="runCompare()" title="Run comparison (Ctrl+Enter)">
+                <i class="bi bi-play-fill"></i> Compare<kbd class="hint">Ctrl⏎</kbd>
+            </button>
         </div>
 
-        <div id="inputContainer">
-            <div class="alert-custom mt-3 mb-1">
-                <i class="bi bi-info-circle-fill"></i>
+        <div class="toolbar-right">
+            <div class="legend-container" title="Edit counts for the last run">
+                <span class="legend-item l-del">del <span class="cnt" id="cnt-del">–</span></span>
+                <span class="legend-item l-add">add <span class="cnt" id="cnt-add">–</span></span>
+                <span class="legend-item l-mv">mov <span class="cnt" id="cnt-mv">–</span></span>
+                <span class="legend-item l-upd">upd <span class="cnt" id="cnt-upd">–</span></span>
+            </div>
+
+            <button class="btn btn-tool" id="syncBtn" onclick="toggleSync()" title="Synchronize scrolling between panes">
+                <i class="bi bi-link-45deg"></i> Sync scroll
+            </button>
+
+            <span id="status-indicator" class="status-ready">● Ready</span>
+        </div>
+    </div>
+
+    <!-- Error banner -->
+    <div id="error-banner" role="alert">
+        <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+        <pre id="error-message"></pre>
+        <button type="button" class="btn-close" aria-label="Dismiss" onclick="hideError()"></button>
+    </div>
+
+    <!-- Input drawer -->
+    <div class="input-card" id="inputContainer">
+        <div class="input-card-body">
+            <div class="alert-note">
+                <i class="bi bi-info-circle"></i>
                 <span>
-                    <strong>Requirement:</strong> Input must be a valid Java class structure (e.g., <code>class Main { ... }</code>). Method fragments alone may not work correctly.
+                    Input must be a valid Java class structure (e.g. <code>class Main { ... }</code>).
+                    Method fragments alone may not parse correctly.
                 </span>
             </div>
 
-            <div class="row g-3 pt-2">
+            <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="pane-title"><i class="bi bi-file-earmark-code"></i> Source (Before)</label>
-                    <textarea id="srcInput" class="form-control editor-input" placeholder="Paste full Java class here...">
+                    <label class="pane-title" for="srcInput"><i class="bi bi-file-earmark-code"></i> Source (Before)</label>
+                    <textarea id="srcInput" class="editor-input" spellcheck="false" placeholder="Paste full Java class here...">
 class Test {
     public void hello() {
         System.out.println("Hello");
@@ -336,8 +449,8 @@ class Test {
 }</textarea>
                 </div>
                 <div class="col-md-6">
-                    <label class="pane-title"><i class="bi bi-file-earmark-plus"></i> Destination (After)</label>
-                    <textarea id="dstInput" class="form-control editor-input" placeholder="Paste full Java class here...">
+                    <label class="pane-title" for="dstInput"><i class="bi bi-file-earmark-plus"></i> Destination (After)</label>
+                    <textarea id="dstInput" class="editor-input" spellcheck="false" placeholder="Paste full Java class here...">
 class Test {
     public void hello() {
         System.out.println("World");
@@ -348,23 +461,30 @@ class Test {
         </div>
     </div>
 
+    <!-- Result panes -->
     <div class="row g-3">
         <div class="col-md-6">
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="pane-header">
                 <div class="pane-title mb-0">Original Version</div>
-                <span class="badge bg-light text-secondary border">read-only</span>
+                <span class="pane-meta" id="srcMeta">read-only</span>
             </div>
-            <div class="code-window">
-                <div id="srcDisplay" class="code-content"></div>
+            <div class="code-window" id="srcWindow">
+                <div class="code-inner">
+                    <div class="gutter" id="srcGutter"></div>
+                    <div id="srcDisplay" class="code-content"><span class="code-empty">Run Compare to see the highlighted result.</span></div>
+                </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="pane-header">
                 <div class="pane-title mb-0">Modified Version</div>
-                <span class="badge bg-light text-secondary border">read-only</span>
+                <span class="pane-meta" id="dstMeta">read-only</span>
             </div>
-            <div class="code-window">
-                <div id="dstDisplay" class="code-content"></div>
+            <div class="code-window" id="dstWindow">
+                <div class="code-inner">
+                    <div class="gutter" id="dstGutter"></div>
+                    <div id="dstDisplay" class="code-content"><span class="code-empty">Run Compare to see the highlighted result.</span></div>
+                </div>
             </div>
         </div>
     </div>
@@ -373,21 +493,55 @@ class Test {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // ===== UI state =====
+    let syncEnabled = false;
+    let syncLock = false;
+
     function toggleInputs() {
         const el = document.getElementById('inputContainer');
         el.classList.toggle('collapsed');
+        document.getElementById('editToggleLabel').textContent =
+            el.classList.contains('collapsed') ? 'Edit input' : 'Hide input';
     }
 
-    function setStatus(state, msg) {
+    function openInputs() {
+        document.getElementById('inputContainer').classList.remove('collapsed');
+        document.getElementById('editToggleLabel').textContent = 'Hide input';
+    }
+
+    function closeInputs() {
+        document.getElementById('inputContainer').classList.add('collapsed');
+        document.getElementById('editToggleLabel').textContent = 'Edit input';
+    }
+
+    function swapInputs() {
+        const src = document.getElementById('srcInput');
+        const dst = document.getElementById('dstInput');
+        [src.value, dst.value] = [dst.value, src.value];
+        openInputs();
+        saveInputs();
+    }
+
+    function toggleSync() {
+        syncEnabled = !syncEnabled;
+        document.getElementById('syncBtn').classList.toggle('active', syncEnabled);
+        if (syncEnabled) {
+            // align dst to src on enable
+            const a = document.getElementById('srcWindow');
+            const b = document.getElementById('dstWindow');
+            b.scrollTop = a.scrollTop;
+            b.scrollLeft = a.scrollLeft;
+        }
+    }
+
+    function setStatus(state, extra) {
         const el = document.getElementById('status-indicator');
-        el.className = ''; // reset
-        el.textContent = msg;
-        
-        if(state === 'processing') {
-            el.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Processing...';
+        el.className = '';
+        if (state === 'processing') {
+            el.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Processing…';
             el.classList.add('status-processing');
         } else if (state === 'success') {
-            el.innerHTML = '<i class="bi bi-check-circle-fill"></i> Done';
+            el.innerHTML = '<i class="bi bi-check-circle-fill"></i> Done' + (extra ? ` <span style="opacity:.7">${extra}</span>` : '');
             el.classList.add('status-success');
         } else if (state === 'error') {
             el.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Error';
@@ -398,94 +552,155 @@ class Test {
         }
     }
 
+    function showError(msg) {
+        document.getElementById('error-message').textContent = msg;
+        document.getElementById('error-banner').classList.add('show');
+    }
+    function hideError() {
+        document.getElementById('error-banner').classList.remove('show');
+    }
+
+    function setCounts(json) {
+        const n = k => (json && json[k]) ? json[k].length : 0;
+        document.getElementById('cnt-del').textContent = n('DELETE');
+        document.getElementById('cnt-add').textContent = n('INSERT');
+        document.getElementById('cnt-mv').textContent  = n('MOVE');
+        document.getElementById('cnt-upd').textContent = n('UPDATE');
+    }
+
+    // ===== Input persistence (best-effort; ignored if storage is unavailable) =====
+    function saveInputs() {
+        try {
+            localStorage.setItem('lgm_src', document.getElementById('srcInput').value);
+            localStorage.setItem('lgm_dst', document.getElementById('dstInput').value);
+            const radio = document.querySelector('input[name="matcherOption"]:checked');
+            if (radio) localStorage.setItem('lgm_opt', radio.value);
+        } catch (e) { /* storage unavailable */ }
+    }
+    function restoreInputs() {
+        try {
+            const s = localStorage.getItem('lgm_src');
+            const d = localStorage.getItem('lgm_dst');
+            const o = localStorage.getItem('lgm_opt');
+            if (s !== null) document.getElementById('srcInput').value = s;
+            if (d !== null) document.getElementById('dstInput').value = d;
+            if (o) {
+                const radio = document.querySelector(`input[name="matcherOption"][value="${o}"]`);
+                if (radio) radio.checked = true;
+            }
+        } catch (e) { /* storage unavailable */ }
+    }
+
+    // ===== Compare =====
     async function runCompare() {
         const srcCode = document.getElementById('srcInput').value;
         const dstCode = document.getElementById('dstInput').value;
-        
+
         let option = '-LGM';
         const radio = document.querySelector('input[name="matcherOption"]:checked');
         if (radio) option = radio.value;
-        
+
+        hideError();
         setStatus('processing');
+        saveInputs();
+        const t0 = performance.now();
 
         try {
             const response = await fetch('/compare', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    src_code: srcCode, 
+                body: JSON.stringify({
+                    src_code: srcCode,
                     dst_code: dstCode,
-                    option: option 
+                    option: option
                 })
             });
 
             const result = await response.json();
-            
+
             if (result.error) {
                 setStatus('error');
-                alert(result.error);
+                showError(result.error);
+                setCounts(null);
                 return;
             }
 
-            setStatus('success');
-            
-            // 入力欄を閉じる（アニメーション付き）
-            document.getElementById('inputContainer').classList.add('collapsed');
-            
+            const ms = Math.round(performance.now() - t0);
+            setStatus('success', `${ms} ms`);
+            setCounts(result.data);
+            closeInputs();
             renderDiff(srcCode, dstCode, result.data);
 
         } catch (e) {
             setStatus('error');
+            showError('Request to /compare failed. Is the backend running?\n' + e);
             console.error(e);
         }
     }
 
+    // ===== Rendering =====
     function renderDiff(srcText, dstText, json) {
         let srcRanges = [];
         let dstRanges = [];
 
-        // Mapping Data
-        if(json.DELETE) json.DELETE.forEach((a, i) => srcRanges.push({s: a.src_pos, e: a.src_end, type: 'del token', id: `del-${i}`}));
-        if(json.INSERT) json.INSERT.forEach((a, i) => dstRanges.push({s: a.dst_pos, e: a.dst_end, type: 'add token', id: `ins-${i}`}));
+        if (json.DELETE) json.DELETE.forEach((a, i) => srcRanges.push({ s: a.src_pos, e: a.src_end, type: 'del token', id: `del-${i}` }));
+        if (json.INSERT) json.INSERT.forEach((a, i) => dstRanges.push({ s: a.dst_pos, e: a.dst_end, type: 'add token', id: `ins-${i}` }));
 
-        if(json.MOVE) json.MOVE.forEach((a, i) => {
+        if (json.MOVE) json.MOVE.forEach((a, i) => {
             const linkId = `mv-${i}`;
-            srcRanges.push({s: a.src_pos, e: a.src_end, type: 'mv token', id: linkId});
-            dstRanges.push({s: a.dst_pos, e: a.dst_end, type: 'mv token', id: linkId});
+            srcRanges.push({ s: a.src_pos, e: a.src_end, type: 'mv token', id: linkId });
+            dstRanges.push({ s: a.dst_pos, e: a.dst_end, type: 'mv token', id: linkId });
         });
 
-        if(json.UPDATE) json.UPDATE.forEach((a, i) => {
+        if (json.UPDATE) json.UPDATE.forEach((a, i) => {
             const linkId = `upd-${i}`;
-            srcRanges.push({s: a.src_pos, e: a.src_end, type: 'upd token', id: linkId});
-            dstRanges.push({s: a.dst_pos, e: a.dst_end, type: 'upd token', id: linkId});
+            srcRanges.push({ s: a.src_pos, e: a.src_end, type: 'upd token', id: linkId });
+            dstRanges.push({ s: a.dst_pos, e: a.dst_end, type: 'upd token', id: linkId });
         });
 
         document.getElementById('srcDisplay').innerHTML = buildHighlightedHtml(srcText, srcRanges);
         document.getElementById('dstDisplay').innerHTML = buildHighlightedHtml(dstText, dstRanges);
 
+        renderGutter('srcGutter', srcText);
+        renderGutter('dstGutter', dstText);
+        updateMeta('srcMeta', srcText);
+        updateMeta('dstMeta', dstText);
+
         setupInteractions();
+    }
+
+    function renderGutter(id, text) {
+        const lines = text ? text.split('\n').length : 0;
+        const nums = [];
+        for (let i = 1; i <= lines; i++) nums.push(i);
+        document.getElementById(id).textContent = nums.join('\n');
+    }
+
+    function updateMeta(id, text) {
+        const lines = text ? text.split('\n').length : 0;
+        document.getElementById(id).textContent = `${lines} lines · read-only`;
     }
 
     function buildHighlightedHtml(text, ranges) {
         if (!text) return "";
         let points = new Set([0, text.length]);
         ranges.forEach(r => {
-            if(r.s >= 0 && r.s <= text.length) points.add(r.s);
-            if(r.e >= 0 && r.e <= text.length) points.add(r.e);
+            if (r.s >= 0 && r.s <= text.length) points.add(r.s);
+            if (r.e >= 0 && r.e <= text.length) points.add(r.e);
         });
-        
+
         let sortedPoints = Array.from(points).sort((a, b) => a - b);
         let html = "";
-        
+
         for (let i = 0; i < sortedPoints.length - 1; i++) {
             let start = sortedPoints[i];
-            let end = sortedPoints[i+1];
+            let end = sortedPoints[i + 1];
             let segmentText = text.substring(start, end);
             let escapedText = escapeHtml(segmentText);
-            
+
             let activeRanges = ranges.filter(r => r.s <= start && r.e >= end);
             activeRanges.sort((a, b) => (a.e - a.s) - (b.e - b.s));
-            
+
             let wrappedSegment = escapedText;
             activeRanges.forEach(r => {
                 wrappedSegment = `<span class="${r.type}" data-link-id="${r.id}">${wrappedSegment}</span>`;
@@ -504,34 +719,82 @@ class Test {
             .replace(/'/g, "&#039;");
     }
 
+    // ===== Interactions =====
+    function clearSelection() {
+        document.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
+    }
+
     function setupInteractions() {
         const tokens = document.querySelectorAll('.token');
         tokens.forEach(el => {
+            const linkId = el.getAttribute('data-link-id');
+
+            // Hover: preview linked counterpart (MOVE / UPDATE pairs)
+            el.addEventListener('mouseenter', () => {
+                if (!linkId) return;
+                document.querySelectorAll(`[data-link-id="${linkId}"]`)
+                    .forEach(t => t.classList.add('hover-link'));
+            });
+            el.addEventListener('mouseleave', () => {
+                document.querySelectorAll('.hover-link')
+                    .forEach(t => t.classList.remove('hover-link'));
+            });
+
+            // Click: pin the pair and scroll the counterpart into view
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
-                
                 const isSelected = el.classList.contains('selected');
-                document.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
-                
-                if (!isSelected) {
-                    const linkId = el.getAttribute('data-link-id');
-                    if (linkId) {
-                        const linkedElements = document.querySelectorAll(`[data-link-id="${linkId}"]`);
-                        linkedElements.forEach(target => {
-                            target.classList.add('selected');
-                            if (target !== el) {
-                                target.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"});
-                            }
-                        });
-                    }
+                clearSelection();
+
+                if (!isSelected && linkId) {
+                    const linkedElements = document.querySelectorAll(`[data-link-id="${linkId}"]`);
+                    linkedElements.forEach(target => {
+                        target.classList.add('selected');
+                        if (target !== el) {
+                            target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+                        }
+                    });
                 }
             });
         });
+    }
 
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
+    // ===== Global listeners (registered once) =====
+    document.addEventListener('click', clearSelection);
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            runCompare();
+        } else if (e.key === 'Escape') {
+            clearSelection();
+        }
+    });
+
+    // Synchronized scrolling
+    function bindSync(aId, bId) {
+        const a = document.getElementById(aId);
+        const b = document.getElementById(bId);
+        a.addEventListener('scroll', () => {
+            if (!syncEnabled || syncLock) return;
+            syncLock = true;
+            b.scrollTop = a.scrollTop;
+            b.scrollLeft = a.scrollLeft;
+            requestAnimationFrame(() => { syncLock = false; });
         });
     }
+    bindSync('srcWindow', 'dstWindow');
+    bindSync('dstWindow', 'srcWindow');
+
+    // Autosave inputs while typing
+    ['srcInput', 'dstInput'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+            clearTimeout(window._saveTimer);
+            window._saveTimer = setTimeout(saveInputs, 400);
+        });
+    });
+
+    restoreInputs();
 </script>
 </body>
 </html>
